@@ -25,6 +25,7 @@ def main(args):
     while True:
       try:
         response = ser.readline()
+        print(response)
         content = response.decode().strip()
         save_data = f'{time.clock_gettime(time.CLOCK_REALTIME):.6f},{content}\n'
         of.write(save_data)
