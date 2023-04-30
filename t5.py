@@ -11,7 +11,8 @@ class T5():
     def __init__(
             self,
             pretrained_model_name_or_path: str,
-            task: str):
+            task: str,
+            use_onnx: bool = False):
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
         self.task = task
         self.load_model()
@@ -23,8 +24,16 @@ class T5():
         self.tokenizer = T5Tokenizer.from_pretrained(
             self.pretrained_model_name_or_path, model_max_length=512
         )
-        self.model = T5ForConditionalGeneration.from_pretrained(
-            self.pretrained_model_name_or_path).to(device)
+
+        self.use_onnx = use_onnx
+        if self.use_onnx:
+            # TODO: Setup ORT Quantizer and Optimizer
+            self.onnx_model = ORTModelForSeq2SeqLM.from_pretrained(
+                pretrained_model_name_or_path).to(device)
+            self.onnx_pipeline = pipeline("text2text-generation", model=model, tokenizer=tknr)
+        else
+            self.model = T5ForConditionalGeneration.from_pretrained(
+                self.pretrained_model_name_or_path).to(device)
 
         self.instructions: Optional[Dict[str, str]] = {
             "rte": "You're given a pair of sentences: a Text and a Hypothesis. " \
@@ -58,6 +67,7 @@ class T5():
                 "qqp": lambda text: f"qqp question1: {text['question1']} question2: {text['question2']} "
             }
 
+
     def predict(  # type: ignore
         self,
         inputs: Sequence[Dict[str, Any]]
@@ -73,8 +83,12 @@ class T5():
                 pad_to_multiple_of=8,
             ).input_ids
             inputs = inputs.to(self.model.device)
-            outputs = self.model.generate(inputs, max_length=10)
-            outputs = self.tokenizer.batch_decode(outputs, skip_special_tokens=True)
-            # return outputs
-            for output in outputs:
-                yield output.strip()
+            if self.use_onnx:
+                outputs = pipeline(inputs)
+                for output in outputs:
+                    yield output["generated_text"]
+            else:
+                outputs = self.model.generate(inputs, max_length=10)
+                outputs = self.tokenizer.batch_decode(outputs, skip_special_tokens=True)
+                for output in outputs:
+                    yield output.strip()
