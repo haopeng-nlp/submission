@@ -4,3 +4,4 @@ transformers
 datasets
 sentencepiece
 pyserial
+more_itertools
