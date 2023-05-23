@@ -1,5 +1,6 @@
 --find-links https://download.pytorch.org/whl/torch_stable.html
 torch==1.12.1+cu113
 transformers
+datasets
 sentencepiece
 pyserial
