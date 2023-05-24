@@ -44,7 +44,7 @@ def offline_predictor_wrapper(predictor: MBART):
     predictor.prepare()
     sys.stdout.write("Model and data loaded. Start the timer.\n")
     sys.stdout.flush()
-    if configs.get("limit", -1) > 0:
+    if configs.get("limit", None) is not None:
         offline_dataset_inputs = offline_dataset_inputs[:configs["limit"]]
     outputs = predictor.predict_offline(offline_dataset_inputs)
     outputs = list(outputs)
