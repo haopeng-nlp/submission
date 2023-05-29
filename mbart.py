@@ -15,6 +15,7 @@ class MBART():
         src_tgt = TASK2SRCTGT.get(task)
         self.src_lang = "en_XX"#src_tgt['src_lang']
         self.tgt_lang = "ro_RO"#src_tgt['tgt_lang']
+        self.pretrained_model_name_or_path = "facebook/mbart-large-en-ro"
         self._quantize_mode = quantize_mode
         self._use_bb8 = self._quantize_mode == "bb8"
         self._use_bb4 = self._quantize_mode == "bb4"
@@ -27,12 +28,15 @@ class MBART():
             src_lang=self.src_lang, 
             tgt_lang=self.tgt_lang)
 
+        if not self._use_fp16 and not self._use_bb4 and not self._use_bb8:
+            print("No model weight quantization selected. Loading in full-precision")
+            self.model = MBartForConditionalGeneration.from_pretrained(self.pretrained_model_name_or_path, device_map="auto").to(device)
         if self._use_fp16:
-            self.model = MBartForConditionalGeneration.from_pretrained("facebook/mbart-large-en-ro", device_map="auto").half().to(device)
+            self.model = MBartForConditionalGeneration.from_pretrained(self.pretrained_model_name_or_path, device_map="auto").half().to(device)
         elif self._use_bb8:
-            self.model = MBartForConditionalGeneration.from_pretrained("facebook/mbart-large-en-ro", device_map="auto", load_in_8bit=True)
+            self.model = MBartForConditionalGeneration.from_pretrained(self.pretrained_model_name_or_path, device_map="auto", load_in_8bit=True)
         elif self._use_bb4:
-            self.model = MBartForConditionalGeneration.from_pretrained("facebook/mbart-large-en-ro", device_map="auto", load_in_4bit=True)
+            self.model = MBartForConditionalGeneration.from_pretrained(self.pretrained_model_name_or_path, device_map="auto", load_in_4bit=True)
         else:
             raise ValueError("Model not declared. Something gone wrong!")
 
