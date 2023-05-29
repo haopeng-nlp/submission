@@ -28,7 +28,9 @@ M2M100_MODELS = [
     "facebook/m2m100_1.2B",
     "facebook/m2m100-12B-avg-5-ckpt",
     "facebook/m2m100-12B-avg-10-ckpt",
-    "facebook/m2m100-12B-last-ckpt"
+    "facebook/m2m100-12B-last-ckpt",
+    "facebook/wmt21-dense-24-wide-en-x",
+    "facebook/wmt21-dense-24-wide-x-en"
 ]
 
 VALID_MODELS = MBART_MODELS + MBART50_MODELS + M2M100_MODELS
