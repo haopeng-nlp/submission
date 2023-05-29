@@ -91,8 +91,6 @@ class MBART():
 
     def prepare(self) -> None:
         device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-<<<<<<< HEAD
-
         self.src_lang, self.tgt_lang = model_task_to_src_tgt_lang(model=self._pretrained_model_name_or_path,
                                                                   task=self._task)
         
@@ -130,24 +128,23 @@ class MBART():
             self.model = model_cls.from_pretrained(self._pretrained_model_name_or_path).to(device)
             
         self.model.eval()
-=======
+
         self.tokenizer = MBartTokenizer.from_pretrained("facebook/mbart-large-en-ro", 
             src_lang=self.src_lang, 
             tgt_lang=self.tgt_lang)
 
         if self._use_fp16:
             print("Declaring half precision model")
-            self.model = MBartForConditionalGeneration.from_pretrained(self.pretrained_model_name_or_path).half().to(device)
+            self.model = model_cls.from_pretrained(self.pretrained_model_name_or_path).half().to(device)
         elif self._use_bb8:
             print("Declaring 8-bit precision model")
-            self.model = MBartForConditionalGeneration.from_pretrained(self.pretrained_model_name_or_path, device_map="auto", load_in_8bit=True)
+            self.model = model_cls.from_pretrained(self.pretrained_model_name_or_path, device_map="auto", load_in_8bit=True)
         elif self._use_bb4:
             print("Declaring 4-bit precision model")
-            self.model = MBartForConditionalGeneration.from_pretrained(self.pretrained_model_name_or_path, device_map="auto", load_in_4bit=True)
+            self.model = model_cls.from_pretrained(self.pretrained_model_name_or_path, device_map="auto", load_in_4bit=True)
         else:
             print("No model weight quantization selected. Loading in full-precision")
             self.model = MBartForConditionalGeneration.from_pretrained(self.pretrained_model_name_or_path).to(device)
->>>>>>> 7adc671 (Refactor precision declaration)
 
     def predict(self, inputs: List[str]):
         inputs = self.tokenizer.batch_encode_plus(
