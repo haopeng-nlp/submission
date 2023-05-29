@@ -1,7 +1,4 @@
-<<<<<<< HEAD
-=======
 from typing import List, Tuple
->>>>>>> c806f7a (Remove STDOUT inside Mbart and refactor extra args into Pipelines)
 import more_itertools
 import torch
 from transformers import AutoTokenizer
