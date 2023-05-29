@@ -1,7 +1,11 @@
 --find-links https://download.pytorch.org/whl/torch_stable.html
-torch==1.12.1+cu113
-transformers
+--extra-index-url https://download.pytorch.org/whl/cu117
+torch==1.13.1+cu117
+torchvision==0.14.1+cu117
+torchaudio==0.13.1
 datasets
 sentencepiece
 pyserial
 more_itertools
+accelerate
+bitsandbytes

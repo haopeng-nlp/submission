@@ -3,16 +3,38 @@ import torch
 from typing import List
 from transformers import MBartForConditionalGeneration, MBartTokenizer
 
+TASK2SRCTGT = {"wmt16-en-ro": {"src_lang": "en_XX", "tgt_lang": "ro_RO"},
+               "wmt16-en-de": {"src_lang": "en_XX", "tgt_lang": "de_DE"},
+               "wmt16-ro-en": {"src_lang": "ro_RO", "tgt_lang": "en_XX"},
+               "wmt16-de-en": {"src_lang": "de_DE", "tgt_lang": "en_XX"}
+               }
 
 # Submission
 class MBART():
-    def __init__(self):
+    def __init__(self, task, quantize_mode):
+        src_tgt = TASK2SRCTGT.get(task)
+        self.src_lang = "en_XX"#src_tgt['src_lang']
+        self.tgt_lang = "ro_RO"#src_tgt['tgt_lang']
+        self._quantize_mode = quantize_mode
+        self._use_bb8 = self._quantize_mode == "bb8"
+        self._use_bb4 = self._quantize_mode == "bb4"
+        self._use_fp16 = self._quantize_mode == "half"
         self.prepare()
 
     def prepare(self):
-        device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-        self.model = MBartForConditionalGeneration.from_pretrained("facebook/mbart-large-en-ro").half().to(device)
-        self.tokenizer = MBartTokenizer.from_pretrained("facebook/mbart-large-en-ro", src_lang="en_XX")
+        self.tokenizer = MBartTokenizer.from_pretrained("facebook/mbart-large-en-ro", 
+            src_lang=self.src_lang, 
+            tgt_lang=self.tgt_lang)
+
+        if self._use_fp16:
+            self.model = MBartForConditionalGeneration.from_pretrained("facebook/mbart-large-en-ro", device_map="auto").half()
+        elif self._use_bb8:
+            self.model = MBartForConditionalGeneration.from_pretrained("facebook/mbart-large-en-ro", device_map="auto", load_in_8bit=True)
+        elif self._use_bb4:
+            self.model = MBartForConditionalGeneration.from_pretrained("facebook/mbart-large-en-ro", device_map="auto", load_in_4bit=True)
+        else:
+            raise ValueError("Model not declared. Something gone wrong!")
+
 
     def predict(self, inputs: List[str]):
         inputs = self.tokenizer.batch_encode_plus(
