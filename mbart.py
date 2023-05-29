@@ -1,7 +1,14 @@
 from typing import List, Tuple
 import more_itertools
 import torch
+<<<<<<< HEAD
 from transformers import AutoTokenizer
+=======
+from typing import List
+import transformers
+from transformers import PreTrainedModel
+from tokenizers import Tokenizer
+>>>>>>> 9e344a0 (Fix typing hints)
 from transformers import MBartForConditionalGeneration, MBartTokenizer
 from transformers import MBart50Tokenizer
 from transformers import M2M100ForConditionalGeneration, M2M100Tokenizer
