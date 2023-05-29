@@ -1,6 +1,9 @@
 import more_itertools
 import torch
 from typing import List
+import transformers
+from transformers import PreTrainedModel
+from tokenizers import Tokenizer
 from transformers import MBartForConditionalGeneration, MBartTokenizer
 from transformers import MBart50Tokenizer
 from transformers import M2M100ForConditionalGeneration, M2M100Tokenizer
@@ -58,8 +61,8 @@ class MBART():
         self.prepare(tokenizer_cls, model_cls)
 
     def prepare(self, 
-                tokenizer_cls: transformers.Tokenizer, 
-                model_cls: transformers.PreTrainedModel
+                tokenizer_cls: Tokenizer, 
+                model_cls: PreTrainedModel
         ) -> None:
 
         device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
