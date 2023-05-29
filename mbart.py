@@ -28,18 +28,18 @@ class MBART():
             src_lang=self.src_lang, 
             tgt_lang=self.tgt_lang)
 
-        if not self._use_fp16 and not self._use_bb4 and not self._use_bb8:
-            print("No model weight quantization selected. Loading in full-precision")
-            self.model = MBartForConditionalGeneration.from_pretrained(self.pretrained_model_name_or_path, device_map="auto").to(device)
         if self._use_fp16:
-            self.model = MBartForConditionalGeneration.from_pretrained(self.pretrained_model_name_or_path, device_map="auto").half().to(device)
+            print("Declaring half precision model")
+            self.model = MBartForConditionalGeneration.from_pretrained(self.pretrained_model_name_or_path).half().to(device)
         elif self._use_bb8:
+            print("Declaring 8-bit precision model")
             self.model = MBartForConditionalGeneration.from_pretrained(self.pretrained_model_name_or_path, device_map="auto", load_in_8bit=True)
         elif self._use_bb4:
+            print("Declaring 4-bit precision model")
             self.model = MBartForConditionalGeneration.from_pretrained(self.pretrained_model_name_or_path, device_map="auto", load_in_4bit=True)
         else:
-            raise ValueError("Model not declared. Something gone wrong!")
-
+            print("No model weight quantization selected. Loading in full-precision")
+            self.model = MBartForConditionalGeneration.from_pretrained(self.pretrained_model_name_or_path).to(device)
 
     def predict(self, inputs: List[str]):
         inputs = self.tokenizer.batch_encode_plus(
