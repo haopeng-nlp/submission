@@ -81,7 +81,7 @@ if __name__ == "__main__":
     parser.add_argument("--model", type=str)
     parser.add_argument("--task", type=str)
     parser.add_argument("--offline", action="store_true")
-    parser.add_argument("--quantize", type=str, help="Quantization mode: [half, bb8, bb4, onnx]")
+    parser.add_argument("--quantize", type=str, default=None, help="Quantization mode: [half, bb8, bb4]. Default to None")
     args = parser.parse_args()
     if "t5" in args.model:
         predictor = T5(

@@ -22,12 +22,13 @@ class MBART():
         self.prepare()
 
     def prepare(self):
+        device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
         self.tokenizer = MBartTokenizer.from_pretrained("facebook/mbart-large-en-ro", 
             src_lang=self.src_lang, 
             tgt_lang=self.tgt_lang)
 
         if self._use_fp16:
-            self.model = MBartForConditionalGeneration.from_pretrained("facebook/mbart-large-en-ro", device_map="auto").half()
+            self.model = MBartForConditionalGeneration.from_pretrained("facebook/mbart-large-en-ro", device_map="auto").half().to(device)
         elif self._use_bb8:
             self.model = MBartForConditionalGeneration.from_pretrained("facebook/mbart-large-en-ro", device_map="auto", load_in_8bit=True)
         elif self._use_bb4:
