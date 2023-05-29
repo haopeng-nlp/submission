@@ -88,7 +88,7 @@ if __name__ == "__main__":
             pretrained_model_name_or_path=args.model,
             task=args.task
         )
-    elif args.model == "mbart":
+    elif ("mbart" in args.model) or ("m2m100" in args.model):
         predictor = MBART(pretrained_model_name_or_path=args.model, task=args.task, quantize_mode=args.quantize)
     elif args.model == "debug":
         predictor = GoodBinarySentimentClassifier()
