@@ -56,18 +56,18 @@ def offline_predictor_wrapper(predictor: MBART):
         predictor.prepare()
         sys.stdout.write("Model and data loaded. Start the timer.\n")
         sys.stdout.flush()
-        
+    
         limit = configs.get("limit", None)
         if limit is not None and limit > 0:
             offline_dataset_inputs = offline_dataset_inputs[:limit]
         outputs = predictor.predict_offline(offline_dataset_inputs)
         outputs = list(outputs)
-        sys.stdout.write("Offiline prediction done. Stop the timer.\n")
+        sys.stdout.write("Offline prediction done. Stop the timer.\n")
         sys.stdout.flush()
 
         outputs = Dataset.from_list([{"output": o} for o in outputs])
         outputs.to_json(configs["offline_output_path"])
-        sys.stdout.write("Offiline outputs written. Exit.\n")
+        sys.stdout.write("Offline outputs written. Exit.\n")
         sys.stdout.flush()
     except:
         sys.exit("Efficiency benchmark exception: SubprocessError")
@@ -81,7 +81,7 @@ if __name__ == "__main__":
     parser.add_argument("--model", type=str)
     parser.add_argument("--task", type=str)
     parser.add_argument("--offline", action="store_true")
-    parser.add_argument("--quantize", type=str, default=None, help="Quantization mode: [half, bb8, bb4]. Default to None")
+    parser.add_argument("--quantize", type=str, default=None, help="Quantization mode: [fp16, bf16, bb8, bb4]. Default to None")
     args = parser.parse_args()
     if "t5" in args.model:
         predictor = T5(
@@ -94,6 +94,7 @@ if __name__ == "__main__":
         predictor = GoodBinarySentimentClassifier()
     else:
         raise NotImplementedError()
+    
     if args.offline:
         offline_predictor_wrapper(predictor)
     else:   
