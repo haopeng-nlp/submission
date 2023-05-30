@@ -40,6 +40,8 @@ def stdio_predictor_wrapper(predictor):
             # the pipe instead of buffered.
             sys.stdout.flush()
     except:
+        sys.stdout.write("Efficiency benchmark exception: SubprocessError\n")
+        sys.stdout.flush()
         raise SubprocessError
 
 
@@ -68,7 +70,7 @@ def offline_predictor_wrapper(predictor: MBART):
         sys.stdout.write("Offiline outputs written. Exit.\n")
         sys.stdout.flush()
     except:
-        raise SubprocessError
+        sys.exit("Efficiency benchmark exception: SubprocessError")
 
 
 if __name__ == "__main__":
