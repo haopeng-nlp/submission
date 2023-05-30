@@ -100,7 +100,7 @@ class MBART():
             yield output.strip()
 
     def predict_offline(self, inputs: List[str]):
-        batches = sorted(batches, key=lambda x: len(x))
+        inputs = sorted(inputs, key=len)
         batches = more_itertools.chunked(inputs, 32)
         # inputs = [self._convert_fn(i) for i in inputs]
         for batch in batches:
