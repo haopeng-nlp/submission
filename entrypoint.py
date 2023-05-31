@@ -70,7 +70,7 @@ def offline_predictor_wrapper(predictor: MBART):
         sys.stdout.write("Offline outputs written. Exit.\n")
         sys.stdout.flush()
     except:
-        sys.exit("Efficiency benchmark exception: SubprocessError")
+        sys.exit("Efficiency benchmark exception: SubprocessError\n")
 
 
 if __name__ == "__main__":

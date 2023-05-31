@@ -250,8 +250,8 @@ class MBART():
             inputs,
             padding=True,
             return_tensors="pt",
-        )
-        inputs = inputs.input_ids.to(self.model.device)
+        ).input_ids
+        inputs = inputs.to(self.model.device)
         outputs = self.model.generate(inputs, **self.additional_args)
         outputs = self.tokenizer.batch_decode(outputs, skip_special_tokens=True)
         for output in outputs:
@@ -265,8 +265,8 @@ class MBART():
                 batch,
                 padding=True,
                 return_tensors="pt",
-            )
-            inputs = inputs.input_ids.to(self.model.device)
+            ).input_ids
+            inputs = inputs.to(self.model.device)
             outputs = self.model.generate(inputs, **self.additional_args)
             outputs = self.tokenizer.batch_decode(outputs, skip_special_tokens=True)
             for output in outputs:
