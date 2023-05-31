@@ -24,7 +24,6 @@ class MBART():
             padding=True,
             return_tensors="pt",
         ).input_ids
-        dsadad
         inputs = inputs.to(self.model.device)
         outputs = self.model.generate(inputs)
         outputs = self.tokenizer.batch_decode(outputs, skip_special_tokens=True)
