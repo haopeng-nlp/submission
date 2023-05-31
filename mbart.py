@@ -1,17 +1,17 @@
+<<<<<<< HEAD
+=======
+from typing import List, Tuple
+>>>>>>> c806f7a (Remove STDOUT inside Mbart and refactor extra args into Pipelines)
 import more_itertools
 import torch
-from typing import List, Tuple
-from functools import partial
-import transformers
-from transformers import PreTrainedModel, AutoTokenizer
-from tokenizers import Tokenizer
+from transformers import AutoTokenizer
 from transformers import MBartForConditionalGeneration, MBartTokenizer
 from transformers import MBart50Tokenizer
 from transformers import M2M100ForConditionalGeneration, M2M100Tokenizer
 
-MBART_PIPELINE = (MBartTokenizer, MBartForConditionalGeneration)
-MBART50_PIPELINE = (MBart50Tokenizer, MBartForConditionalGeneration)
-M2M100_PIPELINE = (M2M100Tokenizer, M2M100ForConditionalGeneration)
+MBART_PIPELINE = (MBartTokenizer, MBartForConditionalGeneration, "decoder_start_token_id")
+MBART50_PIPELINE = (MBart50Tokenizer, MBartForConditionalGeneration, "forced_bos_token_id")
+M2M100_PIPELINE = (M2M100Tokenizer, M2M100ForConditionalGeneration, "forced_bos_token_id")
 
 # ISO is 5 char "en_XX"
 MBART_MODELS = [
@@ -38,13 +38,14 @@ M2M100_MODELS = [
 
 VALID_MODELS = MBART_MODELS + MBART50_MODELS + M2M100_MODELS
 
-TASK2SRCTGT = {"wmt16-en-ro": {"src_lang": "en_XX", "tgt_lang": "ro_RO"},
-               "wmt16-en-de": {"src_lang": "en_XX", "tgt_lang": "de_DE"},
-               "wmt16-ro-en": {"src_lang": "ro_RO", "tgt_lang": "en_XX"},
-               "wmt16-de-en": {"src_lang": "de_DE", "tgt_lang": "en_XX"}
-               }
+TASK2SRCTGT = {
+    "wmt16-en-ro": {"src_lang": "en_XX", "tgt_lang": "ro_RO"},
+    "wmt16-en-de": {"src_lang": "en_XX", "tgt_lang": "de_DE"},
+    "wmt16-ro-en": {"src_lang": "ro_RO", "tgt_lang": "en_XX"},
+    "wmt16-de-en": {"src_lang": "de_DE", "tgt_lang": "en_XX"}
+}
 
-def model_task_to_src_tgt_lang(model: str, task: str) -> Tuple(str, str):
+def model_task_to_src_tgt_lang(model: str, task: str) -> Tuple[str]:
     """
     Input a model name and the relevant task and returns the source and target language IDs.
     Use TASK2SRCTGT to get the 5 char codes. Trim to 2 char if the model is in M2M100_MODELS.
@@ -92,13 +93,13 @@ class MBART():
         self.prepare()
 
     def prepare(self) -> None:
-
         device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
         self.src_lang, self.tgt_lang = model_task_to_src_tgt_lang(model=self._pretrained_model_name_or_path,
                                                                   task=self._task)
+        
         self.tokenizer = AutoTokenizer.from_pretrained(self._pretrained_model_name_or_path, 
-            src_lang=self.src_lang, tgt_lang=self.tgt_lang) # This is redundant insurance for setting up src and tgt
+            src_lang=self.src_lang, tgt_lang=self.tgt_lang) # This is redundant for setting up src and tgt
         
         if self._pretrained_model_name_or_path in M2M100_MODELS:
             self.src_lang_id = self.tokenizer.get_lang_id(self.src_lang)
@@ -108,38 +109,30 @@ class MBART():
             self.tgt_lang_id = self.tokenizer.lang_code_to_id[self.tgt_lang]
 
         if self._pretrained_model_name_or_path in MBART_MODELS:
-            _, model_cls = MBART_PIPELINE
-            self.additional_args = {"decoder_start_token_id": self.tgt_lang_id}
+            _, model_cls, add_arg_key = MBART_PIPELINE
         elif self._pretrained_model_name_or_path in MBART50_MODELS:
-            _, model_cls = MBART50_PIPELINE
-            self.additional_args = {"forced_bos_token_id": self.tgt_lang_id}
+            _, model_cls,  add_arg_key = MBART50_PIPELINE
         elif self._pretrained_model_name_or_path in M2M100_MODELS:
-            _, model_cls = M2M100_PIPELINE
-            self.additional_args = {"forced_bos_token_id": self.tgt_lang_id}
+            _, model_cls,  add_arg_key = M2M100_PIPELINE
         else:
+            add_arg_key="" 
             raise ValueError(f"Argument {self._pretrained_model_name_or_path} not recognized!")
-
+            
+        self.additional_args = {add_arg_key: self.tgt_lang_id}
+        
         if self._quantize_mode == "fp16":
-            sys.stdout.write("Declaring fp16 precision model")
             self.model = model_cls.from_pretrained(self._pretrained_model_name_or_path, torch_dtype=torch.float16).to(device)
         elif self._quantize_mode == "bf16":
-            sys.stdout.write("Declaring bf16 precision model")
             self.model = model_cls.from_pretrained(self._pretrained_model_name_or_path, torch_dtype=torch.bfloat16).to(device)
         elif self._quantize_mode == "bb8":
-            sys.stdout.write("Declaring 8-bit precision model")
             self.model = model_cls.from_pretrained(self._pretrained_model_name_or_path, device_map="auto", load_in_8bit=True)
-            sys.stdout.write(f"8-bit Model is on GPU? {self.model.device==device}")
         elif self._quantize_mode == "bb4":
-            sys.stdout.write("Declaring 4-bit precision model")
             self.model = model_cls.from_pretrained(self._pretrained_model_name_or_path, device_map="auto", load_in_4bit=True)
-            sys.stdout.write(f"4-bit Model is on GPU? {self.model.device==device}")
         else:
-            sys.stdout.write("No model weight quantization selected. Loading in full-precision")
             self.model = model_cls.from_pretrained(self._pretrained_model_name_or_path).to(device)
             
         self.model.eval()
-        sys.stdout.flush()
-        
+
     def predict(self, inputs: List[str]):
         inputs = self.tokenizer.batch_encode_plus(
             inputs,
@@ -155,7 +148,6 @@ class MBART():
     def predict_offline(self, inputs: List[str]):
         inputs = sorted(inputs, key=len)
         batches = more_itertools.chunked(inputs, 32)
-        # inputs = [self._convert_fn(i) for i in inputs]
         for batch in batches:
             inputs = self.tokenizer.batch_encode_plus(
                 batch,
