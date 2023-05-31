@@ -1,11 +1,10 @@
 import argparse
 import json
-import os
 import sys
 
 import transformers
 from datasets import Dataset
-
+import traceback
 from example_stdio_submission_sst import GoodBinarySentimentClassifier
 from mbart import MBART
 from t5 import T5
@@ -41,6 +40,7 @@ def stdio_predictor_wrapper(predictor):
             sys.stdout.flush()
     except:
         sys.stdout.write("Efficiency benchmark exception: SubprocessError\n")
+        sys.stdout.write(traceback.format_exc())
         sys.stdout.flush()
         raise SubprocessError
 
