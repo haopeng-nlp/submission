@@ -37,9 +37,9 @@ PATH2PIPELINE = {**PATH2PIPELINE, **{m: M2M100_PIPELINE for m in M2M100_MODELS}}
 
 TASK2SRCTGT = {
     "wmt16-en-ro": {"src_lang": "en_XX", "tgt_lang": "ro_RO"},
-    "wmt16-en-de": {"src_lang": "en_XX", "tgt_lang": "de_DE"},
     "wmt16-ro-en": {"src_lang": "ro_RO", "tgt_lang": "en_XX"},
-    "wmt16-de-en": {"src_lang": "de_DE", "tgt_lang": "en_XX"}
+    "wmt14-en-de": {"src_lang": "en_XX", "tgt_lang": "de_DE"},
+    "wmt14-de-en": {"src_lang": "de_DE", "tgt_lang": "en_XX"}
 }
 
 def model_task_to_src_tgt_lang(model: str, task: str) -> Tuple[str]:
@@ -80,8 +80,8 @@ class MBART():
     Valid tasks are:
         * wmt16-en-ro
         * wmt16-ro-en
-        * wmt16-en-de
-        * wmt16-de-en
+        * wmt14-en-de
+        * wmt14-de-en
     """
     def __init__(self, pretrained_model_name_or_path: str, task: str, quantize_mode: str) -> None:
         self._pretrained_model_name_or_path = pretrained_model_name_or_path
