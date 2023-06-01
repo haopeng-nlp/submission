@@ -38,7 +38,7 @@ def stdio_predictor_wrapper(predictor):
             # The flush ensures the output is immediately sent through 
             # the pipe instead of buffered.
             sys.stdout.flush()
-    except:
+    except SubprocessError:
         sys.stdout.write("Efficiency benchmark exception: SubprocessError\n")
         sys.stdout.write(traceback.format_exc())
         sys.stdout.flush()
@@ -69,7 +69,7 @@ def offline_predictor_wrapper(predictor: MBART):
         outputs.to_json(configs["offline_output_path"])
         sys.stdout.write("Offline outputs written. Exit.\n")
         sys.stdout.flush()
-    except:
+    except SubprocessError:
         sys.exit("Efficiency benchmark exception: SubprocessError\n")
 
 
