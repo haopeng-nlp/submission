@@ -1,11 +1,12 @@
 from typing import List, Tuple
 import more_itertools
 import torch
-from transformers import AutoTokenizer, MBartForConditionalGeneration, M2M100ForConditionalGeneration
+from transformers import MBartTokenizer, MBart50Tokenizer, M2M100Tokenizer
+from transformers import MBartForConditionalGeneration, M2M100ForConditionalGeneration
 
-MBART_PIPELINE = (MBartForConditionalGeneration, "decoder_start_token_id")
-MBART50_PIPELINE = (MBartForConditionalGeneration, "forced_bos_token_id")
-M2M100_PIPELINE = (M2M100ForConditionalGeneration, "forced_bos_token_id")
+MBART_PIPELINE = (MBartTokenizer, MBartForConditionalGeneration, "decoder_start_token_id")
+MBART50_PIPELINE = (MBart50Tokenizer, MBartForConditionalGeneration, "forced_bos_token_id")
+M2M100_PIPELINE = (M2M100Tokenizer, M2M100ForConditionalGeneration, "forced_bos_token_id")
 
 # ISO is 5 char "en_XX"
 MBART_MODELS = [
@@ -95,9 +96,13 @@ class MBART():
         self.src_lang, self.tgt_lang = model_task_to_src_tgt_lang(model=self._pretrained_model_name_or_path,
                                                                   task=self._task)
         
-        self.tokenizer = AutoTokenizer.from_pretrained(self._pretrained_model_name_or_path, 
-            src_lang=self.src_lang, tgt_lang=self.tgt_lang) # This is redundant for setting up src and tgt
+        tokenizer_cls, model_cls, add_arg_key = PATH2PIPELINE[self._pretrained_model_name_or_path]
+
+        self.tokenizer = tokenizer_cls.from_pretrained(self._pretrained_model_name_or_path, 
+            src_lang=self.src_lang, tgt_lang=self.tgt_lang)
         
+        self.tokenizer.src_lang = self.src_lang # Setup source language 
+
         if self._pretrained_model_name_or_path in M2M100_MODELS:
             self.src_lang_id = self.tokenizer.get_lang_id(self.src_lang)
             self.tgt_lang_id = self.tokenizer.get_lang_id(self.tgt_lang)
@@ -105,7 +110,6 @@ class MBART():
             self.src_lang_id = self.tokenizer.lang_code_to_id[self.src_lang]
             self.tgt_lang_id = self.tokenizer.lang_code_to_id[self.tgt_lang]
 
-        model_cls, add_arg_key = PATH2PIPELINE[self._pretrained_model_name_or_path]
         self.additional_args = {add_arg_key: self.tgt_lang_id}
         
         if self._quantize_mode == "fp16":
@@ -114,6 +118,7 @@ class MBART():
             self.model = model_cls.from_pretrained(self._pretrained_model_name_or_path, torch_dtype=torch.bfloat16).to(device)
         elif self._quantize_mode == "bb8":
             self.model = model_cls.from_pretrained(self._pretrained_model_name_or_path, device_map="auto", load_in_8bit=True)
+            self.model = self.model.to(device)
         elif self._quantize_mode == "bb4":
             self.model = model_cls.from_pretrained(self._pretrained_model_name_or_path, device_map="auto", load_in_4bit=True)
         else:
