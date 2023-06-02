@@ -7,7 +7,7 @@ from typing import List, Tuple
 import more_itertools
 import torch
 import transformers
-from transformers import AutoModelForSeq2SeqLM, AutoTokenizer, MarianModel
+from transformers import AutoModelForSeq2SeqLM, AutoTokenizer, MarianMTModel
 from mbart import MBART
 
 class OPUS(MBART):
@@ -29,7 +29,7 @@ class OPUS(MBART):
         
         self.additional_args = {}
         
-        model_cls = MarianModel
+        model_cls = MarianMTModel
 
         if self._quantize_mode == "bb8" or self._quantize_mode == "bb4":
             raise ValueError("Lower quantization is not supported for OPUS models.")
