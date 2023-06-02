@@ -6,7 +6,7 @@ from transformers import AutoModel, AutoTokenizer
 
 class AutoSeq2SeqModelSubmission(object):
     """
-    Class for Generic HuggingFace Seq2Seq Model for Submission to CleanHouse.
+    Class for Generic HuggingFace Seq2Seq Model for Submission to FairPlay.
 
     This is intended as an example base class. The example implementations provided 
     outline how to use mBART or OPUS Translation models. The only functionality
