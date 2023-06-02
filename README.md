@@ -13,8 +13,6 @@ We focus on two task use cases here: `RAFT` and `WMT` for Seq2Seq MT efficiency 
 
 We plan to add more tasks soon!
 
-To install the driver code see https://github.com/allenai/efficiency-benchmark/tree/main.
- 
 ## Repository
 
 ```
@@ -30,7 +28,9 @@ submission
 └── t5.py                           # T5 example
 ```
 
-### Submission instructions
+## Submission instructions
+
+To install the benchmark code see https://github.com/allenai/efficiency-benchmark/tree/main.
 
 ``` bash
 git clone https://github.com/allenai/efficiency-benchmark.git
@@ -38,27 +38,29 @@ cd efficiency-benchmark/
 pip install .   # We recommend using a new virtual environment
 ```
 
-## To run the mBART WMT14-en-de example locally
+### To run the mBART WMT14-en-de example locally
 ```bash
 https://github.com/haopeng-nlp/submission.git
 cd submission
-pip install -r requirements.txt # In the same (new) environment as above. These will be *your* requirements to run.
+
+# In the same (new) environment as above. These will be *your* requirements to run.
+pip install -r requirements.txt 
 TASK=wmt14-en-de
 SCENARIO=accuracy
 MODEL="facebook/mbart-large-50-many-to-many-mmt"
 
-# Everything after -- is your runtime command with specific runtime instructions for the Python script
+# Everything after -- is your command with specific instructions for the Python script
 efficiency-benchmark run --task $TASK  --max_batch_size 50 --scenario $SCENARIO \
     -- python entrypoint.py --model $MODEL --$TASK
 ```
 
-## To submit to the benchmark server
+### To submit to the benchmark server
 ```bash
 TASK=wmt14-en-de
 SCENARIO=accuracy
 MODEL="facebook/mbart-large-50-many-to-many-mmt"
 
-# Everything after -- is your runtime command with specific runtime instructions for the Python script
+# Everything after -- is your command with specific instructions for the Python script
 efficiency-benchmark submit --task $TASK  --max_batch_size 50 \
     -- python entrypoint.py --model $MODEL --$TASK
 ```
