@@ -140,7 +140,7 @@ class MBART():
 
     def predict_offline(self, inputs: List[str]):
         inputs = sorted(inputs, key=len)
-        batches = more_itertools.chunked(inputs, 50)
+        batches = more_itertools.chunked(inputs, 32)
         for batch in batches:
             inputs = self.tokenizer.batch_encode_plus(
                 batch,
