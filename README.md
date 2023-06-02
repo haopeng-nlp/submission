@@ -55,6 +55,8 @@ efficiency-benchmark run --task $TASK  --max_batch_size 50 --scenario $SCENARIO 
 ```
 
 ### To submit to the benchmark server
+
+#### Example: Submitting an mBART model:
 ```bash
 TASK=wmt14-en-de
 SCENARIO=accuracy
@@ -63,6 +65,22 @@ MODEL="facebook/mbart-large-50-many-to-many-mmt"
 # Everything after -- is your command with specific instructions for the Python script
 efficiency-benchmark submit --task $TASK  --max_batch_size 50 \
     -- python entrypoint.py --model $MODEL --$TASK
+```
+
+#### Submitting a custom model:
+
+This format assumes you have (i) a trained model and (ii) this model is publicly accessible on HuggingFace hub.
+To use the `AutoSeq2SeqModelSubmission` class for your submission, pass the model name with the prefix `"auto-"`.
+
+```bash
+TASK=wmt14-en-de
+SCENARIO=accuracy
+PREFIX="auto-"
+MODEL="myhuggingfaceorg_or_namespace/myhuggingfacemodel"
+
+# Everything after -- is your command with specific instructions for the Python script
+efficiency-benchmark submit --task $TASK  --max_batch_size 50 \
+    -- python entrypoint.py --model ${PREFIX}{MODEL} --$TASK
 ```
 
 Please contact haop@ to get access to this machine.

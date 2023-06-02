@@ -7,6 +7,7 @@ from subprocess import SubprocessError
 import transformers
 from datasets import Dataset
 from example_stdio_submission_sst import GoodBinarySentimentClassifier
+from auto import AutoSeq2SeqModelSubmission
 from mbart import MBART
 from opus import OPUS
 from t5 import T5
@@ -92,6 +93,10 @@ if __name__ == "__main__":
                           task=args.task, quantize_mode=args.quantize)
     elif ("opus" in args.model):
         predictor = OPUS(pretrained_model_name_or_path=args.model, 
+                          task=args.task, quantize_mode=args.quantize)
+    elif args.model.startswith("auto-"):
+        model = args.model.replace("auto-", "")
+        predictor = AutoSeq2SeqModelSubmission(pretrained_model_name_or_path=model, 
                           task=args.task, quantize_mode=args.quantize)
     elif args.model == "debug":
         predictor = GoodBinarySentimentClassifier()
