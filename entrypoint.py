@@ -8,6 +8,7 @@ import transformers
 from datasets import Dataset
 from example_stdio_submission_sst import GoodBinarySentimentClassifier
 from mbart import MBART
+from opus import OPUS
 from t5 import T5
 
 
@@ -88,6 +89,9 @@ if __name__ == "__main__":
         )
     elif ("mbart" in args.model) or ("m2m100" in args.model) or ("wmt21" in args.model):
         predictor = MBART(pretrained_model_name_or_path=args.model, 
+                          task=args.task, quantize_mode=args.quantize)
+    elif ("opus" in args.model):
+        predictor = OPUS(pretrained_model_name_or_path=args.model, 
                           task=args.task, quantize_mode=args.quantize)
     elif args.model == "debug":
         predictor = GoodBinarySentimentClassifier()

@@ -118,7 +118,6 @@ class MBART():
             self.model = model_cls.from_pretrained(self._pretrained_model_name_or_path, torch_dtype=torch.bfloat16).to(device)
         elif self._quantize_mode == "bb8":
             self.model = model_cls.from_pretrained(self._pretrained_model_name_or_path, device_map="auto", load_in_8bit=True)
-            self.model = self.model.to(device)
         elif self._quantize_mode == "bb4":
             self.model = model_cls.from_pretrained(self._pretrained_model_name_or_path, device_map="auto", load_in_4bit=True)
         else:
