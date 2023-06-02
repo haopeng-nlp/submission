@@ -3,6 +3,7 @@ import more_itertools
 import torch
 from transformers import MBartTokenizer, MBart50Tokenizer, M2M100Tokenizer
 from transformers import MBartForConditionalGeneration, M2M100ForConditionalGeneration
+from auto import AutoSeq2SeqModelSubmission
 
 MBART_PIPELINE = (MBartTokenizer, MBartForConditionalGeneration, "decoder_start_token_id")
 MBART50_PIPELINE = (MBart50Tokenizer, MBartForConditionalGeneration, "forced_bos_token_id")
@@ -32,7 +33,7 @@ M2M100_MODELS = [
 ]
 
 VALID_MODELS = MBART_MODELS + MBART50_MODELS + M2M100_MODELS
-PATH2PIPELINE = {m: MBART_PIPELINE for m in MBART_MODELS}
+PATH2PIPELINE = {m: MBART_PIELINE for m in MBART_MODELS}
 PATH2PIPELINE = {**PATH2PIPELINE, **{m: MBART50_PIPELINE for m in MBART50_MODELS}}
 PATH2PIPELINE = {**PATH2PIPELINE, **{m: M2M100_PIPELINE for m in M2M100_MODELS}}
 
@@ -70,7 +71,7 @@ def model_task_to_src_tgt_lang(model: str, task: str) -> Tuple[str]:
     return src_lang, tgt_lang
 
 # Submission
-class MBART():
+class MBART(AutoSeq2SeqModelSubmission):
     """
     A wrapper for HuggingFace mBART models for inference prediction. We currently support only those in VALID_MODELS.
     We allow for quantization using either torch_dtype=torch.float16 or the `bits_and_bytes` load_in_4bit, load_in_8bit calls.

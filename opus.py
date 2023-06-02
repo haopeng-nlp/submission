@@ -8,9 +8,9 @@ import more_itertools
 import torch
 import transformers
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer, MarianMTModel
-from mbart import MBART
+from auto import AutoSeq2SeqModelSubmission
 
-class OPUS(MBART):
+class OPUS(AutoSeq2SeqModelSubmission):
     """
     Class for OPUS Translation for Efficiency Benchmark.
     Inherits from MBART class (which does most of the processing).
