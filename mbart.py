@@ -9,6 +9,8 @@ MBART_PIPELINE = (MBartTokenizer, MBartForConditionalGeneration, "decoder_start_
 MBART50_PIPELINE = (MBart50Tokenizer, MBartForConditionalGeneration, "forced_bos_token_id")
 M2M100_PIPELINE = (M2M100Tokenizer, M2M100ForConditionalGeneration, "forced_bos_token_id")
 
+
+
 # ISO is 5 char "en_XX"
 MBART_MODELS = [
     "facebook/mbart-large-en-ro"
@@ -116,6 +118,7 @@ class MBART(AutoSeq2SeqModelSubmission):
         if self._quantize_mode == "fp16":
             self.model = model_cls.from_pretrained(self._pretrained_model_name_or_path, torch_dtype=torch.float16).to(device)
         elif self._quantize_mode == "bf16":
+            torch.backends.cuda.matmul.allow_bf16_reduced_precision_reduction = True
             self.model = model_cls.from_pretrained(self._pretrained_model_name_or_path, torch_dtype=torch.bfloat16).to(device)
         elif self._quantize_mode == "bb8":
             self.model = model_cls.from_pretrained(self._pretrained_model_name_or_path, device_map="auto", load_in_8bit=True)

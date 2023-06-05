@@ -3,15 +3,17 @@ import json
 import sys
 import traceback
 from subprocess import SubprocessError
-
+import torch
 import transformers
 from datasets import Dataset
+
 from example_stdio_submission_sst import GoodBinarySentimentClassifier
 from auto import AutoSeq2SeqModelSubmission
 from mbart import MBART
 from opus import OPUS
 from t5 import T5
 
+torch.backends.cuda.matmul.allow_bf16_reduced_precision_reduction = True
 
 # We provide this
 def stdio_predictor_wrapper(predictor: MBART):
