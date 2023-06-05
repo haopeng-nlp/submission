@@ -23,9 +23,14 @@ class MBART():
         if self.use_onnx:
             # TODO: Setup ORT Quantizer and Optimizer
             self.onnx_model = ORTModelForSeq2SeqLM.from_pretrained(
-                pretrained_model_name_or_path).to(self.device)
+                pretrained_model_name_or_path, 
+                use_io_binding=torch.cuda.is_available()).to(self.device)
             self.onnx_pipeline = pipeline(
-                "text2text-generation", model=self.onnx_model, tokenizer=self.tokenizer, device=0)
+                "text2text-generation",
+                model=self.onnx_model, 
+                tokenizer=self.tokenizer,
+                max_length=10,
+                device=0)
         else:
             self.model = MBartForConditionalGeneration.from_pretrained(
                 pretrained_model_name_or_path).to(self.device)
