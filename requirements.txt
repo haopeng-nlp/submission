@@ -10,3 +10,4 @@ sentencepiece
 pyserial
 more_itertools
 bitsandbytes
+sacremoses
