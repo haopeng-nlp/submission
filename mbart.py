@@ -30,7 +30,7 @@ class MBART():
                 model=self.onnx_model, 
                 tokenizer=self.tokenizer,
                 max_length=10,
-                device=0)
+                device=self.device)
         else:
             self.model = MBartForConditionalGeneration.from_pretrained(
                 pretrained_model_name_or_path).to(self.device)

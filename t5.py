@@ -1,8 +1,11 @@
+import logging
 from typing import Any, Dict, Iterator, Optional, Sequence
 
 import torch
+from optimum.pipelines import pipeline
+from optimum.onnxruntime import ORTModelForSeq2SeqLM
 from transformers import T5ForConditionalGeneration, T5Tokenizer
-import logging
+
 
 logging.getLogger("transformers.tokenization_utils").setLevel(logging.ERROR)
 
@@ -10,11 +13,12 @@ logging.getLogger("transformers.tokenization_utils").setLevel(logging.ERROR)
 class T5():
     def __init__(
             self,
-            pretrained_model_name_or_path: str,
-            task: str,
-            use_onnx: bool = False):
+            pretrained_model_name_or_path: str = 't5-base',
+            task: str = 'rte',
+            use_onnx: bool = True):
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
         self.task = task
+        self.use_onnx = use_onnx
         self.load_model()
 
     def load_model(self):
@@ -25,13 +29,18 @@ class T5():
             self.pretrained_model_name_or_path, model_max_length=512
         )
 
-        self.use_onnx = use_onnx
         if self.use_onnx:
             # TODO: Setup ORT Quantizer and Optimizer
             self.onnx_model = ORTModelForSeq2SeqLM.from_pretrained(
-                pretrained_model_name_or_path).to(device)
-            self.onnx_pipeline = pipeline("text2text-generation", model=model, tokenizer=tknr)
-        else
+                self.pretrained_model_name_or_path,
+                use_io_binding=torch.cuda.is_available()).to(device)
+            self.onnx_pipeline = pipeline(
+                "text2text-generation", 
+                model=self.onnx_model, 
+                tokenizer=self.tokenizer, 
+                max_length=10,
+                device=device)
+        else:
             self.model = T5ForConditionalGeneration.from_pretrained(
                 self.pretrained_model_name_or_path).to(device)
 
@@ -67,7 +76,6 @@ class T5():
                 "qqp": lambda text: f"qqp question1: {text['question1']} question2: {text['question2']} "
             }
 
-
     def predict(  # type: ignore
         self,
         inputs: Sequence[Dict[str, Any]]
@@ -75,19 +83,19 @@ class T5():
         convert_fn = self.convert_fns[self.task]
         inputs = [convert_fn(input) for input in inputs]
         with torch.inference_mode():
-            inputs = self.tokenizer.batch_encode_plus(
-                inputs,
-                padding=True,
-                truncation="only_first",
-                return_tensors="pt",
-                pad_to_multiple_of=8,
-            ).input_ids
-            inputs = inputs.to(self.model.device)
             if self.use_onnx:
-                outputs = pipeline(inputs)
+                outputs = self.onnx_pipeline(inputs)
                 for output in outputs:
                     yield output["generated_text"]
             else:
+                inputs = self.tokenizer.batch_encode_plus(
+                    inputs,
+                    padding=True,
+                    truncation="only_first",
+                    return_tensors="pt",
+                    pad_to_multiple_of=8,
+                ).input_ids
+                inputs = inputs.to(self.model.device)
                 outputs = self.model.generate(inputs, max_length=10)
                 outputs = self.tokenizer.batch_decode(outputs, skip_special_tokens=True)
                 for output in outputs:
