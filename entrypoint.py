@@ -3,9 +3,12 @@ import json
 import sys
 
 import transformers
+from datasets import Dataset
+import traceback
+from example_stdio_submission_sst import GoodBinarySentimentClassifier
 from mbart import MBART
 from t5 import T5
-from example_stdio_submission_sst import GoodBinarySentimentClassifier
+from subprocess import SubprocessError
 
 
 # We provide this
@@ -16,18 +19,61 @@ def stdio_predictor_wrapper(predictor):
 
     Assumes each input instance ends with "\n".
     """
-    for line in sys.stdin:
-        line = line.rstrip()
-        inputs = json.loads(line)
-        assert isinstance(inputs, list)
-        # Participants need to connect their inference code to our wrapper through the following line.
-        outputs = predictor.predict(inputs=inputs)
-        # Writes are \n deliminated, so adding \n is essential to separate this write from the next loop iteration.
-        outputs = [o for o in outputs]
-        sys.stdout.write(f"{json.dumps(outputs)}\n")
-        # Writes to stdout are buffered. The flush ensures the output is immediately sent through the pipe
-        # instead of buffered.
+    try:
+        for line in sys.stdin:
+            line = line.rstrip()
+            inputs = json.loads(line)
+            assert isinstance(inputs, list)
+
+            # Participants need to connect their inference code 
+            # to our wrapper through the following line.
+            outputs = predictor.predict(inputs=inputs)
+            outputs = list(outputs)
+
+
+            # Writes are \n deliminated, so adding \n is essential 
+            # to separate this write from the next loop iteration.
+            sys.stdout.write(f"{json.dumps(outputs)}\n")
+            # Writes to stdout are buffered. 
+            # The flush ensures the output is immediately sent through 
+            # the pipe instead of buffered.
+            sys.stdout.flush()
+    except:
+        sys.stdout.write("Efficiency benchmark exception: SubprocessError\n")
+        sys.stdout.write(traceback.format_exc())
         sys.stdout.flush()
+        raise SubprocessError
+
+
+def offline_predictor_wrapper(predictor: MBART):
+    try:
+        configs = sys.stdin.readline().rstrip()
+        configs = json.loads(configs)
+        assert isinstance(configs, dict)
+
+        offline_dataset = Dataset.from_json(configs["offline_data_path"])
+        offline_dataset_inputs = [instance["input"] for instance in offline_dataset]
+        predictor.prepare()
+        sys.stdout.write("Model and data loaded. Start the timer.\n")
+        sys.stdout.flush()
+
+        limit = configs.get("limit", None)
+        if limit is not None and limit > 0:
+            offline_dataset_inputs = offline_dataset_inputs[:limit]
+        outputs = predictor.predict_offline(offline_dataset_inputs)
+        outputs = list(outputs)
+        sys.stdout.write("Offiline prediction done. Stop the timer.\n")
+        sys.stdout.flush()
+
+        outputs = Dataset.from_list([{"output": o} for o in outputs])
+        outputs.to_json(configs["offline_output_path"])
+        sys.stdout.write("Offiline outputs written. Exit.\n")
+        sys.stdout.flush()
+    except:
+        sys.stdout.write("Efficiency benchmark exception: SubprocessError\n")
+        sys.stdout.write(traceback.format_exc())
+        sys.stdout.flush()
+        raise SubprocessError
 
 
 if __name__ == "__main__":
@@ -37,17 +83,24 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str)
     parser.add_argument("--task", type=str)
+    parser.add_argument("--offline", action="store_true")
+    parser.add_argument('--use_onnx', action="store_true")
     args = parser.parse_args()
-
     if "t5" in args.model:
         predictor = T5(
             pretrained_model_name_or_path=args.model,
-            task=args.task
+            task=args.task,
+            use_onnx=args.use_onnx
         )
     elif args.model == "mbart":
-        predictor = MBART()
+        predictor = MBART(
+            pretrained_model_name_or_path=args.model,
+            use_onnx=args.use_onnx)
     elif args.model == "debug":
         predictor = GoodBinarySentimentClassifier()
     else:
         raise NotImplementedError()
-    stdio_predictor_wrapper(predictor)
+    if args.offline:
+        offline_predictor_wrapper(predictor)
+    else:
+        stdio_predictor_wrapper(predictor)

@@ -66,14 +66,16 @@ class T5():
                 "rte": lambda text: f"{self.instructions['rte']}Text: {text['sentence1']}\nHypothesis: {text['sentence2']}\n",
                 "mnli": lambda text: f"{self.instructions['nli']}Premise: {text['premise']}\nHypothesis: {text['hypothesis']}\n",
                 "snli": lambda text: f"{self.instructions['nli']}Premise: {text['premise']}\nHypothesis: {text['hypothesis']}\n",
-                "qqp": lambda text: f"{self.instructions['qqp']}Question1: {text['question1']}\nQuestion2: {text['question2']}\n"
+                "qqp": lambda text: f"{self.instructions['qqp']}Question1: {text['question1']}\nQuestion2: {text['question2']}\n",
+                "raft::ade_corpus_v2": lambda x : x["Sentence"]
             }
         else:
             self.convert_fns = {
                 "rte": lambda text: f"rte sentence1: {text['sentence1']} sentence2: {text['sentence2']} ",
                 "mnli": lambda text: f"mnli hypothesis: {text['hypothesis']} premise: {text['premise']} ",
                 "snli": lambda text: f"snli hypothesis: {text['hypothesis']} premise: {text['premise']} ",
-                "qqp": lambda text: f"qqp question1: {text['question1']} question2: {text['question2']} "
+                "qqp": lambda text: f"qqp question1: {text['question1']} question2: {text['question2']} ",
+                "raft::ade_corpus_v2": lambda x : x["Sentence"]
             }
 
     def predict(  # type: ignore
