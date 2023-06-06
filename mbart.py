@@ -1,15 +1,12 @@
-import json
-import logging
-import sys
-import argparse
+import os
 import more_itertools
-
 import torch
-import transformers
 from typing import List, Tuple
 from optimum.onnxruntime import ORTModelForSeq2SeqLM
-from transformers import MBartTokenizer, MBart50Tokenizer, M2M100Tokenizer
 from transformers import (
+    MBartTokenizer,
+    MBart50Tokenizer,
+    M2M100Tokenizer,
     MBartForConditionalGeneration,
     M2M100ForConditionalGeneration,
     pipeline,
@@ -54,6 +51,7 @@ M2M100_MODELS = [
     "facebook/wmt21-dense-24-wide-x-en",
 ]
 
+ONNX_MODEL_DIR = "onnx_models/"
 VALID_MODELS = MBART_MODELS + MBART50_MODELS + M2M100_MODELS
 PATH2PIPELINE = {m: MBART_PIPELINE for m in MBART_MODELS}
 PATH2PIPELINE = {**PATH2PIPELINE, **{m: MBART50_PIPELINE for m in MBART50_MODELS}}
@@ -133,7 +131,7 @@ class MBART(AutoSeq2SeqModelSubmission):
 
     def prepare(self) -> None:
         device = (
-            torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+            torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
         )
 
         self.src_lang, self.tgt_lang = model_task_to_src_tgt_lang(
@@ -162,7 +160,8 @@ class MBART(AutoSeq2SeqModelSubmission):
         self.additional_args = {add_arg_key: self.tgt_lang_id}
         if self._use_onnx:
             self.onnx_model = ORTModelForSeq2SeqLM.from_pretrained(
-                ONNX_PATH, use_io_binding=torch.cuda.is_available()
+                os.path.join(ONNX_MODEL_DIR, self._pretrained_model_name_or_path),
+                use_io_binding=torch.cuda.is_available()
             ).to(device)
             self.onnx_pipeline = pipeline(
                 "text2text-generation",
@@ -170,6 +169,7 @@ class MBART(AutoSeq2SeqModelSubmission):
                 tokenizer=self.tokenizer,
                 max_length=10,
                 device=device,
+                **self.additional_args
             )
         else:
             if self._quantize_mode == "fp16":
