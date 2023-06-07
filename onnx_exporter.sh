@@ -4,8 +4,8 @@
 # Usage: ./onnx_exporter.sh
 
 # Name of model to be exported on Huggingface ModelHub
-HF_MODEL_NAME="facebook/mbart-large-en-ro";
-OUTPUT_DIR="mbart_onnx";
+OUTPUT_DIR="onnx_models";
+HF_MODEL_NAME="facebook/mbart-large-50-many-to-one-mmt"
 
 optimum-cli export onnx \
     --model $HF_MODEL_NAME \
@@ -13,4 +13,4 @@ optimum-cli export onnx \
     --framework pt \
     --device cuda \
     --optimize O4 \
-    $OUTPUT_DIR;
+    $OUTPUT_DIR/$HF_MODEL_NAME;
