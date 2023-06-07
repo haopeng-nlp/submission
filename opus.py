@@ -31,7 +31,6 @@ class OPUS(AutoSeq2SeqModelSubmission):
         device = (
             torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
         )
-
         self.src_lang, self.tgt_lang = (
             self._task.split("-")[1],
             self._task.split("-")[2],
@@ -42,6 +41,10 @@ class OPUS(AutoSeq2SeqModelSubmission):
             src_lang=self.src_lang,
             tgt_lang=self.tgt_lang,
         )
+
+        self.additional_args = {}
+
+        model_cls = MarianMTModel
 
         self.additional_args = {}
 
