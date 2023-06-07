@@ -34,7 +34,7 @@ MBART50_MODELS = [
     "facebook/mbart-large-50-many-to-many-mmt",  # Any to Any
 ]
 
-FSMT_MODELS = ["facebook/wmt19-de-en"]
+FSMT_MODELS = ["facebook/wmt19-de-en", "facebook/wmt19-en-de"]
 
 # ISO is 2 char
 M2M100_MODELS = [
