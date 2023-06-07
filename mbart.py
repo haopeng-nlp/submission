@@ -4,13 +4,13 @@ import torch
 from huggingface_hub import hf_hub_download
 from typing import List, Tuple
 from optimum.onnxruntime import ORTModelForSeq2SeqLM
+from optimum.pipelines import pipeline
 from transformers import (
     MBartTokenizer,
     MBart50Tokenizer,
     M2M100Tokenizer,
     MBartForConditionalGeneration,
     M2M100ForConditionalGeneration,
-    pipeline,
 )
 from auto import AutoSeq2SeqModelSubmission
 
@@ -169,7 +169,7 @@ class MBART(AutoSeq2SeqModelSubmission):
                 use_io_binding=torch.cuda.is_available()
             ).to(device)
             self.onnx_pipeline = pipeline(
-                "text2text-generation",
+                task="text2text-generation",
                 model=self.onnx_model,
                 tokenizer=self.tokenizer,
                 max_length=10,
