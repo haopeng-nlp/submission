@@ -1,6 +1,7 @@
 import os
 import more_itertools
 import torch
+from huggingface_hub import hf_hub_download
 from typing import List, Tuple
 from optimum.onnxruntime import ORTModelForSeq2SeqLM
 from transformers import (
@@ -51,8 +52,7 @@ M2M100_MODELS = [
     "facebook/wmt21-dense-24-wide-x-en",
 ]
 
-ONNX_MODEL_DIR = "jaredfern/efficiency-benchmark-onnx/"
-ONNX_MODEL_DIR = "onnx_models/"
+ONNX_MODEL_DIR = "jaredfern/efficiency-benchmark-onnx"
 VALID_MODELS = MBART_MODELS + MBART50_MODELS + M2M100_MODELS
 PATH2PIPELINE = {m: MBART_PIPELINE for m in MBART_MODELS}
 PATH2PIPELINE = {**PATH2PIPELINE, **{m: MBART50_PIPELINE for m in MBART50_MODELS}}
@@ -160,6 +160,9 @@ class MBART(AutoSeq2SeqModelSubmission):
 
         self.additional_args = {add_arg_key: self.tgt_lang_id}
         if self._use_onnx:
+            hf_hub_download(
+                repo_id=ONNX_MODEL_DIR,
+                filename=f"{self._pretrained_model_name_or_path}/encoder_model.onnx.data")
             self.onnx_model = ORTModelForSeq2SeqLM.from_pretrained(
                 ONNX_MODEL_DIR,
                 subfolder=self._pretrained_model_name_or_path,
