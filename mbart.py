@@ -174,6 +174,7 @@ class MBART(AutoSeq2SeqModelSubmission):
                 tokenizer=self.tokenizer,
                 max_length=10,
                 device=device,
+                accelerator="ort",
                 **self.additional_args
             )
         else:
