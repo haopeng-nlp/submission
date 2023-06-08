@@ -60,6 +60,7 @@ TASK2SRCTGT = {
     "wmt14-de-en": {"src_lang": "de_DE", "tgt_lang": "en_XX"},
 }
 
+device_type = "cuda" if torch.cuda.is_available() else "cpu"
 
 def model_task_to_src_tgt_lang(model: str, task: str) -> Tuple[str]:
     """
@@ -121,6 +122,8 @@ class MBART(AutoSeq2SeqModelSubmission):
         super().__init__(
             pretrained_model_name_or_path, task, quantize_mode, offline_bsz
         )
+        if self._pretrained_model_name_or_path in FSMT_MODELS:
+            self._cm = torch.autocast(device_type=device_type)
 
     def prepare(self) -> None:
         device = (

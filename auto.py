@@ -1,12 +1,11 @@
 from typing import List
+from contextlib import nullcontext
+
 import more_itertools
 import torch
 from torch import autocast
 
 from transformers import AutoModel, AutoTokenizer
-
-device_type = "cuda" if torch.cuda.is_available() else "cpu"
-
 
 class AutoSeq2SeqModelSubmission(object):
     """
@@ -42,6 +41,7 @@ class AutoSeq2SeqModelSubmission(object):
         self._task = task
         self._quantize_mode = quantize_mode
         self._offline_bsz = offline_bsz
+        self._cm = nullcontext()
 
         # In some instances, you might need to add extra arguments to the `model.generate()`
         # functionality below. You can add this here to be injected during inference.
@@ -101,7 +101,7 @@ class AutoSeq2SeqModelSubmission(object):
     # subclass and override `predict()` for your use case.
 
     def predict(self, inputs: List[str]) -> str:
-        with torch.autocast(device_type=device_type):
+        with self._cm:
             # Run batch tokenization on a list of string inputs provided by stdout using the benchmark
             inputs = self.tokenizer.batch_encode_plus(
                 inputs,
@@ -124,7 +124,7 @@ class AutoSeq2SeqModelSubmission(object):
 
     # Offline prediction is the second usage scenario
     def predict_offline(self, inputs: List[str]) -> str:
-        with torch.autocast(device_type=device_type):
+        with self._cm:
             # Processing speed for the benchmark is significantly improved by sorting the inputs
             inputs = sorted(inputs, key=len)
 
