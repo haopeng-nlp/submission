@@ -186,6 +186,6 @@ class MBART(AutoSeq2SeqModelSubmission):
         else:
             self.model = model_cls.from_pretrained(
                 self._pretrained_model_name_or_path
-            ).to(device)
+            ).to_bettertransformer().to(device)
 
         self.model.eval()

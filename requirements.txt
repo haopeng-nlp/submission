@@ -2,6 +2,7 @@
 --extra-index-url https://download.pytorch.org/whl/cu117
 git+https://github.com/huggingface/transformers.git@fabe17a726bbf6081cfbcc975d8ac451a81f3e2d
 git+https://github.com/huggingface/accelerate.git@4d583ad6a1f13d1d7617e6a37f791ec01a68413a
+git+https://github.com/huggingface/optimum.git@72133e595f9a054c3221ec9ea87f42e0bdaa062b
 torch==2.0.0+cu117
 torchvision==0.15.1+cu117
 torchaudio==2.0.1
