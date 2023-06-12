@@ -168,79 +168,60 @@ class MBART(AutoSeq2SeqModelSubmission):
                 subfolder=self._pretrained_model_name_or_path,
                 use_io_binding=torch.cuda.is_available()
             ).to(device)
-            self.onnx_pipeline = pipeline(
-                task="text2text-generation",
-                model=self.onnx_model,
-                tokenizer=self.tokenizer,
-                max_length=10,
-                device=device,
-                accelerator="ort",
-                **self.additional_args
+
+        if self._quantize_mode == "fp16":
+            self.model = model_cls.from_pretrained(
+                self._pretrained_model_name_or_path, torch_dtype=torch.float16
+            ).to(device)
+        elif self._quantize_mode == "bf16":
+            torch.backends.cuda.matmul.allow_bf16_reduced_precision_reduction = True
+            self.model = model_cls.from_pretrained(
+                self._pretrained_model_name_or_path, torch_dtype=torch.bfloat16
+            ).to(device)
+        elif self._quantize_mode == "bb8":
+            self.model = model_cls.from_pretrained(
+                self._pretrained_model_name_or_path,
+                device_map="auto",
+                load_in_8bit=True,
+            )
+        elif self._quantize_mode == "bb4":
+            self.model = model_cls.from_pretrained(
+                self._pretrained_model_name_or_path,
+                device_map="auto",
+                load_in_4bit=True,
             )
         else:
-            if self._quantize_mode == "fp16":
-                self.model = model_cls.from_pretrained(
-                    self._pretrained_model_name_or_path, torch_dtype=torch.float16
-                ).to(device)
-            elif self._quantize_mode == "bf16":
-                torch.backends.cuda.matmul.allow_bf16_reduced_precision_reduction = True
-                self.model = model_cls.from_pretrained(
-                    self._pretrained_model_name_or_path, torch_dtype=torch.bfloat16
-                ).to(device)
-            elif self._quantize_mode == "bb8":
-                self.model = model_cls.from_pretrained(
-                    self._pretrained_model_name_or_path,
-                    device_map="auto",
-                    load_in_8bit=True,
-                )
-            elif self._quantize_mode == "bb4":
-                self.model = model_cls.from_pretrained(
-                    self._pretrained_model_name_or_path,
-                    device_map="auto",
-                    load_in_4bit=True,
-                )
-            else:
-                self.model = model_cls.from_pretrained(
-                    self._pretrained_model_name_or_path
-                ).to(device)
+            self.model = model_cls.from_pretrained(
+                self._pretrained_model_name_or_path
+            ).to(device)
 
-            self.model.eval()
+        self.model.eval()
 
     def predict(self, inputs: List[str]):
-        if self._use_onnx:
-            outputs = self.onnx_pipeline(inputs)
-            for output in outputs:
-                yield output["generated_text"]
-        else:
+        inputs = self.tokenizer.batch_encode_plus(
+            inputs,
+            padding=True,
+            return_tensors="pt",
+        ).input_ids
+        inputs = inputs.to(self.onnx_model.device)
+        outputs = self.onnx_model.generate(inputs, **self.additional_args)
+        outputs = self.tokenizer.batch_decode(outputs, skip_special_tokens=True)
+        for output in outputs:
+            yield output.strip()
+
+    def predict_offline(self, inputs: List[str]):
+        inputs = sorted(inputs, key=len)
+        batches = more_itertools.chunked(inputs, 32)
+        for batch in batches:
             inputs = self.tokenizer.batch_encode_plus(
-                inputs,
+                batch,
                 padding=True,
                 return_tensors="pt",
+                truncation="only_first",
+                pad_to_multiple_of=8,
             ).input_ids
-            inputs = inputs.to(self.model.device)
-            outputs = self.model.generate(inputs, **self.additional_args)
+            inputs = inputs.to(self.onnx_model.device)
+            outputs = self.onnx_model.generate(inputs, max_length=32, **self.additional_args)
             outputs = self.tokenizer.batch_decode(outputs, skip_special_tokens=True)
             for output in outputs:
                 yield output.strip()
-
-    def predict_offline(self, inputs: List[str]):
-        if self._use_onnx:
-            outputs = self.onnx_pipeline(inputs)
-            for output in outputs:
-                yield output["generated_text"]
-        else:
-            inputs = sorted(inputs, key=len)
-            batches = more_itertools.chunked(inputs, 32)
-            for batch in batches:
-                inputs = self.tokenizer.batch_encode_plus(
-                    batch,
-                    padding=True,
-                    return_tensors="pt",
-                    truncation="only_first",
-                    pad_to_multiple_of=8,
-                ).input_ids
-                inputs = inputs.to(self.model.device)
-                outputs = self.model.generate(inputs, **self.additional_args)
-                outputs = self.tokenizer.batch_decode(outputs, skip_special_tokens=True)
-                for output in outputs:
-                    yield output.strip()
