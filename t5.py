@@ -49,7 +49,8 @@ class T5():
                 "mnli": lambda text: f"{self.instructions['nli']}Premise: {text['premise']}\nHypothesis: {text['hypothesis']}\n",
                 "snli": lambda text: f"{self.instructions['nli']}Premise: {text['premise']}\nHypothesis: {text['hypothesis']}\n",
                 "qqp": lambda text: f"{self.instructions['qqp']}Question1: {text['question1']}\nQuestion2: {text['question2']}\n",
-                "raft::ade_corpus_v2": lambda x : x["Sentence"]
+                "raft::ade_corpus_v2": lambda x : x["Sentence"],
+                "mrqa::race": lambda x: x["context"] + x["question"]
             }
         else:
             self.convert_fns = {
@@ -57,13 +58,15 @@ class T5():
                 "mnli": lambda text: f"mnli hypothesis: {text['hypothesis']} premise: {text['premise']} ",
                 "snli": lambda text: f"snli hypothesis: {text['hypothesis']} premise: {text['premise']} ",
                 "qqp": lambda text: f"qqp question1: {text['question1']} question2: {text['question2']} ",
-                "raft::ade_corpus_v2": lambda x : x["Sentence"]
+                "raft::ade_corpus_v2": lambda x : x["Sentence"],
+                "mrqa::race": lambda x: x["context"] + x["question"]
             }
 
     def predict(  # type: ignore
         self,
         inputs: Sequence[Dict[str, Any]]
     ) -> Iterator[str]:
+        print(inputs)
         convert_fn = self.convert_fns[self.task]
         inputs = [convert_fn(input) for input in inputs]
         with torch.inference_mode():
