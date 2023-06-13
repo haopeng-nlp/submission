@@ -8,7 +8,7 @@ import more_itertools
 import torch
 import transformers
 from optimum.onnxruntime import ORTModelForSeq2SeqLM
-from transformers import AutoModelForSeq2SeqLM, AutoTokenizer, MarianMTModel, pipeline  
+from transformers import AutoModelForSeq2SeqLM, AutoTokenizer, MarianMTModel, pipeline
 from auto import AutoSeq2SeqModelSubmission
 
 ONNX_MODEL_DIR = "jaredfern/efficiency-benchmark-onnx"
@@ -42,17 +42,26 @@ class OPUS(AutoSeq2SeqModelSubmission):
             tgt_lang=self.tgt_lang,
         )
 
-        self.additional_args = {}
 
         model_cls = MarianMTModel
 
-        self.additional_args = {"max_length": 200, "do_sample": True, "num_beams": 1}
-
+        self.additional_args = {
+            "max_new_tokens": 200,
+            "early_stopping": False,
+            "do_sample": False,
+            "num_beams": 1,
+            "use_cache": True,
+            "temperature": 1.0,
+            add_arg_key: self.tgt_lang_id
+        }
         if self._use_onnx:
             self.model = ORTModelForSeq2SeqLM.from_pretrained(
                 ONNX_MODEL_DIR,
                 subfolder=self._pretrained_model_name_or_path,
-                use_io_binding=torch.cuda.is_available()
+                provider="CUDAExecutionProvider",
+                use_io_binding=torch.cuda.is_available(),
+                use_merged=True,
+                use_cache=True
             ).to(device)
         else:
             model_cls = MarianMTModel

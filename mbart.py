@@ -159,7 +159,6 @@ class MBART(AutoSeq2SeqModelSubmission):
             self.tgt_lang_id = self.tokenizer.lang_code_to_id[self.tgt_lang]
 
         self.additional_args = {
-            "max_length": 20,
             "max_new_tokens": 200,
             "early_stopping": False,
             "do_sample": False,
@@ -172,6 +171,7 @@ class MBART(AutoSeq2SeqModelSubmission):
             try:
                 # Manual download because `.from_pretrained()` fails to download of encoder data file
                 hf_hub_download(repo_id=ONNX_MODEL_DIR, filename=f"{self._pretrained_model_name_or_path}/encoder_model.onnx.data")
+                hf_hub_download(repo_id=ONNX_MODEL_DIR, filename=f"{self._pretrained_model_name_or_path}/decoder_model.onnx.data")
             except:
                 pass
 
@@ -181,7 +181,8 @@ class MBART(AutoSeq2SeqModelSubmission):
                 provider="CUDAExecutionProvider",
                 use_io_binding=torch.cuda.is_available(),
                 generation_config=self.additional_args,
-                use_cache=False
+                use_merged=True,
+                use_cache=True
             ).to(device)
         else:
             if self._quantize_mode == "fp16":
