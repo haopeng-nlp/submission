@@ -1,7 +1,7 @@
 --find-links https://download.pytorch.org/whl/torch_stable.html
 --extra-index-url https://download.pytorch.org/whl/cu117
 git+https://github.com/huggingface/accelerate.git@4d583ad6a1f13d1d7617e6a37f791ec01a68413a
---extra-index-url index-url=https://aiinfra.pkgs.visualstudio.com/PublicPackages/_packaging/ORT-Nightly/pypi/simple/
+--extra-index-url https://aiinfra.pkgs.visualstudio.com/PublicPackages/_packaging/ORT-Nightly/pypi/simple/
 
 torch==2.0.0+cu117
 torchvision==0.15.1+cu117
