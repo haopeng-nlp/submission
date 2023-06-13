@@ -52,7 +52,7 @@ M2M100_MODELS = [
     "facebook/wmt21-dense-24-wide-x-en",
 ]
 
-ONNX_MODEL_DIR = "/data/jaredfer/efficiency-benchmark-onnx/"
+ONNX_MODEL_DIR = "jaredfern/efficiency-benchmark-onnx"
 VALID_MODELS = MBART_MODELS + MBART50_MODELS + M2M100_MODELS
 PATH2PIPELINE = {m: MBART_PIPELINE for m in MBART_MODELS}
 PATH2PIPELINE = {**PATH2PIPELINE, **{m: MBART50_PIPELINE for m in MBART50_MODELS}}
@@ -159,9 +159,13 @@ class MBART(AutoSeq2SeqModelSubmission):
             self.tgt_lang_id = self.tokenizer.lang_code_to_id[self.tgt_lang]
 
         self.additional_args = {
-            "max_length": 200,
-            "do_sample": True,
+            "max_length": 20,
+            "max_new_tokens": 200,
+            "early_stopping": False,
+            "do_sample": False,
             "num_beams": 1,
+            "use_cache": True,
+            "temperature": 1.0,
             add_arg_key: self.tgt_lang_id
         }
         if self._use_onnx:
@@ -174,36 +178,39 @@ class MBART(AutoSeq2SeqModelSubmission):
             self.model = ORTModelForSeq2SeqLM.from_pretrained(
                 ONNX_MODEL_DIR,
                 subfolder=self._pretrained_model_name_or_path,
+                provider="CUDAExecutionProvider",
                 use_io_binding=torch.cuda.is_available(),
+                generation_config=self.additional_args,
+                use_cache=False
             ).to(device)
-
-        if self._quantize_mode == "fp16":
-            self.model = model_cls.from_pretrained(
-                self._pretrained_model_name_or_path, torch_dtype=torch.float16
-            ).to(device)
-        elif self._quantize_mode == "bf16":
-            torch.backends.cuda.matmul.allow_bf16_reduced_precision_reduction = True
-            self.model = model_cls.from_pretrained(
-                self._pretrained_model_name_or_path, torch_dtype=torch.bfloat16
-            ).to(device)
-        elif self._quantize_mode == "bb8":
-            self.model = model_cls.from_pretrained(
-                self._pretrained_model_name_or_path,
-                device_map="auto",
-                load_in_8bit=True,
-            )
-        elif self._quantize_mode == "bb4":
-            self.model = model_cls.from_pretrained(
-                self._pretrained_model_name_or_path,
-                device_map="auto",
-                load_in_4bit=True,
-            )
         else:
-            self.model = model_cls.from_pretrained(
-                self._pretrained_model_name_or_path
-            ).to(device)
+            if self._quantize_mode == "fp16":
+                self.model = model_cls.from_pretrained(
+                    self._pretrained_model_name_or_path, torch_dtype=torch.float16
+                ).to(device)
+            elif self._quantize_mode == "bf16":
+                torch.backends.cuda.matmul.allow_bf16_reduced_precision_reduction = True
+                self.model = model_cls.from_pretrained(
+                    self._pretrained_model_name_or_path, torch_dtype=torch.bfloat16
+                ).to(device)
+            elif self._quantize_mode == "bb8":
+                self.model = model_cls.from_pretrained(
+                    self._pretrained_model_name_or_path,
+                    device_map="auto",
+                    load_in_8bit=True,
+                )
+            elif self._quantize_mode == "bb4":
+                self.model = model_cls.from_pretrained(
+                    self._pretrained_model_name_or_path,
+                    device_map="auto",
+                    load_in_4bit=True,
+                )
+            else:
+                self.model = model_cls.from_pretrained(
+                    self._pretrained_model_name_or_path
+                ).to(device)
 
-        self.model.eval()
+            self.model.eval()
 
     def predict(self, inputs: List[str]):
         inputs = self.tokenizer.batch_encode_plus(
