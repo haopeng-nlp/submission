@@ -52,7 +52,7 @@ M2M100_MODELS = [
     "facebook/wmt21-dense-24-wide-x-en",
 ]
 
-ONNX_MODEL_DIR = "jaredfern/efficiency-benchmark-onnx"
+ONNX_MODEL_DIR = "/data/jaredfer/efficiency-benchmark-onnx/"
 VALID_MODELS = MBART_MODELS + MBART50_MODELS + M2M100_MODELS
 PATH2PIPELINE = {m: MBART_PIPELINE for m in MBART_MODELS}
 PATH2PIPELINE = {**PATH2PIPELINE, **{m: MBART50_PIPELINE for m in MBART50_MODELS}}
@@ -158,12 +158,19 @@ class MBART(AutoSeq2SeqModelSubmission):
             self.src_lang_id = self.tokenizer.lang_code_to_id[self.src_lang]
             self.tgt_lang_id = self.tokenizer.lang_code_to_id[self.tgt_lang]
 
-        self.additional_args = {add_arg_key: self.tgt_lang_id}
+        self.additional_args = {
+            "max_length": 200,
+            "do_sample": True,
+            "num_beams": 1,
+            add_arg_key: self.tgt_lang_id
+        }
         if self._use_onnx:
-            # Manual download because `.from_pretrained()` fails to download of encoder data file
-            hf_hub_download(
-                repo_id=ONNX_MODEL_DIR,
-                filename=f"{self._pretrained_model_name_or_path}/encoder_model.onnx.data")
+            try:
+                # Manual download because `.from_pretrained()` fails to download of encoder data file
+                hf_hub_download(repo_id=ONNX_MODEL_DIR, filename=f"{self._pretrained_model_name_or_path}/encoder_model.onnx.data")
+            except:
+                pass
+
             self.model = ORTModelForSeq2SeqLM.from_pretrained(
                 ONNX_MODEL_DIR,
                 subfolder=self._pretrained_model_name_or_path,
@@ -205,7 +212,7 @@ class MBART(AutoSeq2SeqModelSubmission):
             return_tensors="pt",
         ).input_ids
         inputs = inputs.to(self.model.device)
-        outputs = self.model.generate(inputs, max_length=32, **self.additional_args)
+        outputs = self.model.generate(inputs, **self.additional_args)
         outputs = self.tokenizer.batch_decode(outputs, skip_special_tokens=True)
         for output in outputs:
             yield output.strip()
@@ -222,7 +229,8 @@ class MBART(AutoSeq2SeqModelSubmission):
                 pad_to_multiple_of=8,
             ).input_ids
             inputs = inputs.to(self.model.device)
-            outputs = self.model.generate(inputs, max_length=32, **self.additional_args)
+            outputs = self.model.generate(inputs, **self.additional_args)
             outputs = self.tokenizer.batch_decode(outputs, skip_special_tokens=True)
             for output in outputs:
                 yield output.strip()
+

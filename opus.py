@@ -46,22 +46,14 @@ class OPUS(AutoSeq2SeqModelSubmission):
 
         model_cls = MarianMTModel
 
-        self.additional_args = {}
+        self.additional_args = {"max_length": 200, "do_sample": True, "num_beams": 1}
 
         if self._use_onnx:
-            self.onnx_model = ORTModelForSeq2SeqLM.from_pretrained(
+            self.model = ORTModelForSeq2SeqLM.from_pretrained(
                 ONNX_MODEL_DIR,
                 subfolder=self._pretrained_model_name_or_path,
                 use_io_binding=torch.cuda.is_available()
             ).to(device)
-            self.onnx_pipeline = pipeline(
-                "text2text-generation",
-                model=self.onnx_model,
-                tokenizer=self.tokenizer,
-                max_length=10,
-                device=device,
-                **self.additional_args
-            )
         else:
             model_cls = MarianMTModel
 

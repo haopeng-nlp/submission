@@ -59,7 +59,7 @@ class AutoSeq2SeqModelSubmission(object):
         # In some instances, you might need to add extra arguments to the `model.generate()`
         # functionality below. You can add this here to be injected during inference.
         # See `mbart.py` for an example of this.
-        self.additional_args = {}
+        self.additional_args = {"max_length": 200, "do_sample": True, "num_beams": 1}
 
         # We assume AutoModel will give you the correct model output.
         # You can change this (e.g., for `AutoModelForSeq2SeqLM`) if required.
