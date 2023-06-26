@@ -1,4 +1,4 @@
-from typing import List
+from typing import Any, Dict, List
 from contextlib import nullcontext
 
 import more_itertools
@@ -100,8 +100,9 @@ class AutoSeq2SeqModelSubmission(object):
     # If your model does not support `.generate()` then you must
     # subclass and override `predict()` for your use case.
 
-    def predict(self, inputs: List[str]) -> str:
+    def predict(self, inputs: List[Dict[str, Any]]) -> str:
         with self._cm:
+            inputs = [ i["translation"][self.src_lang.split("_")[0]] for i in inputs]
             # Run batch tokenization on a list of string inputs provided by stdout using the benchmark
             inputs = self.tokenizer.batch_encode_plus(
                 inputs,
