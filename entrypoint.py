@@ -7,11 +7,9 @@ import torch
 import transformers
 from datasets import Dataset
 
-from example_stdio_submission_sst import GoodBinarySentimentClassifier
 from auto import AutoSeq2SeqModelSubmission
 from mbart import MBART
 from opus import OPUS
-from t5 import T5
 
 torch.backends.cuda.matmul.allow_bf16_reduced_precision_reduction = True
 
@@ -60,7 +58,7 @@ def offline_predictor_wrapper(predictor: MBART):
         limit = configs.get("limit", None)
         if limit is not None and limit > 0:
             offline_dataset_inputs = offline_dataset_inputs[:limit]
-        outputs = predictor.predict_offline(offline_dataset_inputs)
+        outputs = predictor.predict(offline_dataset_inputs)
         outputs = list(outputs)
         sys.stdout.write("Offiline prediction done. Stop the timer.\n")
         sys.stdout.flush()
@@ -92,16 +90,14 @@ if __name__ == "__main__":
         help="Quantization mode: [fp16, bf16, bb8, bb4]. Default to None",
     )  # noqa: E501
     parser.add_argument(
-        "--offline-bsz",
+        "--max-bsz",
         type=int,
         required=False,
         default=32,
-        help="Override the batch size for the `Offline` inference scenario (Default=32)",
+        help="Max batch size",
     )  # noqa: E501
     args = parser.parse_args()
-    if "t5" in args.model:
-        predictor = T5(pretrained_model_name_or_path=args.model, task=args.task)
-    elif (
+    if (
         ("mbart" in args.model)
         or ("m2m100" in args.model)
         or ("wmt21" in args.model)
@@ -111,14 +107,14 @@ if __name__ == "__main__":
             pretrained_model_name_or_path=args.model,
             task=args.task,
             quantize_mode=args.quantize,
-            offline_bsz=args.offline_bsz,
+            max_bsz=args.max_bsz,
         )
     elif "opus" in args.model:
         predictor = OPUS(
             pretrained_model_name_or_path=args.model,
             task=args.task,
             quantize_mode=args.quantize,
-            offline_bsz=args.offline_bsz,
+            max_bsz=args.max_bsz,
         )
     elif args.model.startswith("auto-"):
         model = args.model.replace("auto-", "")
@@ -126,10 +122,8 @@ if __name__ == "__main__":
             pretrained_model_name_or_path=model,
             task=args.task,
             quantize_mode=args.quantize,
-            offline_bsz=args.offline_bsz,
+            max_bsz=args.max_bsz,
         )
-    elif args.model == "debug":
-        predictor = GoodBinarySentimentClassifier()
     else:
         raise NotImplementedError()
 

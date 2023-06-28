@@ -1,13 +1,5 @@
-import argparse
-import json
-import sys
-from functools import partial
-from typing import List, Tuple
-
-import more_itertools
 import torch
-import transformers
-from transformers import AutoModelForSeq2SeqLM, AutoTokenizer, MarianMTModel
+from transformers import AutoTokenizer, MarianMTModel
 from auto import AutoSeq2SeqModelSubmission
 
 
@@ -23,10 +15,10 @@ class OPUS(AutoSeq2SeqModelSubmission):
         pretrained_model_name_or_path: str,
         task: str,
         quantize_mode: str,
-        offline_bsz: int = 32,
+        max_bsz: int = 32,
     ) -> None:
         super().__init__(
-            pretrained_model_name_or_path, task, quantize_mode, offline_bsz
+            pretrained_model_name_or_path, task, quantize_mode, max_bsz
         )
 
     def prepare(self) -> None:

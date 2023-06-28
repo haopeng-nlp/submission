@@ -3,9 +3,9 @@ from contextlib import nullcontext
 
 import more_itertools
 import torch
-from torch import autocast
 
 from transformers import AutoModel, AutoTokenizer
+
 
 class AutoSeq2SeqModelSubmission(object):
     """
@@ -35,12 +35,12 @@ class AutoSeq2SeqModelSubmission(object):
         pretrained_model_name_or_path: str,
         task: str,
         quantize_mode: str,
-        offline_bsz: int = 32,
+        max_bsz: int = 32,
     ) -> None:
         self._pretrained_model_name_or_path = pretrained_model_name_or_path
         self._task = task
         self._quantize_mode = quantize_mode
-        self._offline_bsz = offline_bsz
+        self._max_bsz = max_bsz
         self._cm = nullcontext()
 
         # In some instances, you might need to add extra arguments to the `model.generate()`
@@ -101,38 +101,12 @@ class AutoSeq2SeqModelSubmission(object):
     # subclass and override `predict()` for your use case.
 
     def predict(self, inputs: List[Dict[str, Any]]) -> str:
-        with self._cm:
-            inputs = [ i["translation"][self.src_lang.split("_")[0]] for i in inputs]
-            # Run batch tokenization on a list of string inputs provided by stdout using the benchmark
-            inputs = self.tokenizer.batch_encode_plus(
-                inputs,
-                padding=True,
-                return_tensors="pt",
-            ).input_ids
-
-            # Move inputs to GPU
-            inputs = inputs.to(self.model.device)
-
-            # Generate output predictions.
-            outputs = self.model.generate(inputs, **self.additional_args)
-
-            # Decode from IDs to Tokens
-            outputs = self.tokenizer.batch_decode(outputs, skip_special_tokens=True)
-
-            # Yield outputs back to stdout
-            for output in outputs:
-                yield output.strip()
-
-    # Offline prediction is the second usage scenario
-    def predict_offline(self, inputs: List[str]) -> str:
+        inputs = [ i["translation"][self.src_lang.split("_")[0]] for i in inputs]
         with self._cm:
             # Processing speed for the benchmark is significantly improved by sorting the inputs
             inputs = sorted(inputs, key=len)
 
-            # Chunk your inputs and heuristically batch to size 32
-            # (this will only affect the batch size for the offline setting)
-            # Below processing mimics `predict()` above.
-            batches = more_itertools.chunked(inputs, self._offline_bsz)
+            batches = more_itertools.chunked(inputs, self._max_bsz)
 
             for batch in batches:
                 inputs = self.tokenizer.batch_encode_plus(
